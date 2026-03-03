@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Interactivo Eterno</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #f0f0f0; }
+        model-viewer { width: 100vw; height: 100vh; --poster-color: transparent; }
+        #controles { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 8px; font-family: sans-serif; }
+    </style>
+</head>
+<body>
+
+    <div id="controles">
+        <small>Toca un componente para resaltar sus cables</small><br>
+        <button onclick="resetear()">Ver Todo</button>
+    </div>
+
+    <model-viewer id="tablero" src="tablero.glb" camera-controls touch-action="pan-y" shadow-intensity="1" ar>
+    </model-viewer>
+
+    <script>
+        const viewer = document.querySelector("#tablero");
+
+        // AQUÍ ESTÁ TU DICCIONARIO (Edita esto según tus números de cable)
+        const relaciones = {
+            "Contactor_K1": ["Cable_101", "Cable_102", "Cable_103"],
+            "Termico_F1": ["Cable_201", "Cable_202"],
+            "Relay_R1": ["Cable_50", "Cable_51"]
+        };
+
+        viewer.addEventListener("click", (event) => {
+            const hit = viewer.sampleRenderScale(event.clientX, event.clientY);
+            if (hit) {
+                const nombrePieza = hit.nodeName; // Nombre que traes de Inventor
+                resaltar(nombrePieza);
+            }
+        });
+
+        function resaltar(nombre) {
+            const modelo = viewer.model;
+            // Primero ponemos TODO transparente (fantasma)
+            modelo.materials.forEach(mat => mat.setAlphaMode("BLEND"));
+            modelo.materials.forEach(mat => mat.setBaseColorFactor([1, 1, 1, 0.1]));
+
+            // Buscamos si la pieza tocada tiene cables asociados en el diccionario
+            const cablesAsociados = relaciones[nombre] || [];
+            
+            // Resaltamos la pieza tocada y sus cables
+            const piezasAResaltar = [nombre, ...cablesAsociados];
+            
+            piezasAResaltar.forEach(p => {
+                const material = modelo.getMaterialByName(p); // Importante: Nombre en Inventor = Nombre Material
+                if(material) material.setBaseColorFactor([1, 1, 1, 1]);
+            });
+        }
+
+        function resetear() {
+            viewer.model.materials.forEach(mat => mat.setBaseColorFactor([1, 1, 1, 1]));
+        }
+    </script>
+</body>
+</html>
