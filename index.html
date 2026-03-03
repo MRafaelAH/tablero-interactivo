@@ -6,10 +6,22 @@
     <title>Tablero Interactivo Eterno</title>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
     <style>
-        body { margin: 0; background-color: #f0f0f0; }
-        model-viewer { width: 100vw; height: 100vh; --poster-color: transparent; }
-        #controles { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 8px; font-family: sans-serif; }
-    </style>
+    body { margin: 0; }
+    model-viewer { 
+        width: 100vw;   /* 100% del ancho de la pantalla */
+        height: 100vh;  /* 100% del alto de la pantalla */
+        background-color: #444; /* Un fondo oscuro para que resalte el tablero */
+    }
+    #controles { 
+        position: absolute; 
+        top: 20px; 
+        left: 20px; 
+        z-index: 10; /* Para que siempre esté arriba */
+        background: rgba(255,255,255,0.8); 
+        padding: 15px; 
+        border-radius: 10px; 
+    }
+</style>
 </head>
 <body>
 
@@ -64,3 +76,4 @@
 </body>
 
 </html>
+
