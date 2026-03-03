@@ -3,89 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tablero Interactivo Eterno</title>
+    <title>Tablero Interactivo - Pro</title>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
     <style>
-    body { margin: 0; }
-    model-viewer { 
-        width: 100vw;   /* 100% del ancho de la pantalla */
-        height: 100vh;  /* 100% del alto de la pantalla */
-        background-color: #444; /* Un fondo oscuro para que resalte el tablero */
-    }
-    #controles { 
-        position: absolute; 
-        top: 20px; 
-        left: 20px; 
-        z-index: 10; /* Para que siempre esté arriba */
-        background: rgba(255,255,255,0.8); 
-        padding: 15px; 
-        border-radius: 10px; 
-    }
-</style>
+        :root { --primary-color: #2c3e50; --accent-color: #3498db; }
+        body { margin: 0; display: flex; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; overflow: hidden; }
+        
+        /* Barra Lateral (Árbol de Componentes) */
+        #sidebar { 
+            width: 300px; background: #f8f9fa; border-right: 1px solid #ddd; 
+            display: flex; flex-direction: column; padding: 15px; overflow-y: auto;
+        }
+        #sidebar h2 { font-size: 1.2rem; color: var(--primary-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; }
+        .component-item { 
+            padding: 8px 12px; margin: 4px 0; background: white; border-radius: 4px; 
+            cursor: pointer; border: 1px solid #eee; transition: 0.2s; font-size: 0.9rem;
+        }
+        .component-item:hover { background: #e1f5fe; border-color: var(--accent-color); }
+
+        /* Contenedor del Visor 3D */
+        #viewer-container { flex-grow: 1; position: relative; background: #333; }
+        model-viewer { width: 100%; height: 100%; }
+
+        #controls { position: absolute; bottom: 20px; right: 20px; }
+        button { padding: 10px 20px; cursor: pointer; background: var(--accent-color); color: white; border: none; border-radius: 5px; }
+    </style>
 </head>
 <body>
 
-    <div id="controles">
-        <small>Toca un componente para resaltar sus cables</small><br>
-        <button onclick="resetear()">Ver Todo</button>
+    <div id="sidebar">
+        <h2>Componentes</h2>
+        <div id="tree-container">Cargando árbol...</div>
     </div>
 
-    <model-viewer 
-    id="tablero" 
-    src="Tablero.glb" 
-    ar 
-    camera-controls 
-    touch-action="pan-y"
-
-    skybox-image="https://modelviewer.dev/shared-assets/environments/neutral.hdr"
-    shadow-intensity="1.5"
-    shadow-softness="0.5"
-    environment-image="https://modelviewer.dev/shared-assets/environments/neutral.hdr"
-    exposure="1.2">
-</model-viewer>
+    <div id="viewer-container">
+        <model-viewer 
+            id="tablero" 
+            src="TABLERO.glb" 
+            ar camera-controls 
+            environment-image="legacy" 
+            exposure="1.2" 
+            shadow-intensity="1.5">
+            
+            <div id="controls">
+                <button onclick="resetView()">Ver Todo</button>
+            </div>
+        </model-viewer>
+    </div>
 
     <script>
         const viewer = document.querySelector("#tablero");
+        const treeContainer = document.querySelector("#tree-container");
 
-        // AQUÍ ESTÁ TU DICCIONARIO (Edita esto según tus números de cable)
-        const relaciones = {
-            "Contactor_K1": ["Cable_101", "Cable_102", "Cable_103"],
-            "Termico_F1": ["Cable_201", "Cable_202"],
-            "Relay_R1": ["Cable_50", "Cable_51"]
-        };
+        // 1. ESCUCHAR CUANDO EL MODELO CARGA PARA CREAR EL ÁRBOL
+        viewer.addEventListener("load", () => {
+            const model = viewer.model;
+            treeContainer.innerHTML = ""; // Limpiar mensaje de carga
 
-        viewer.addEventListener("click", (event) => {
-            const hit = viewer.sampleRenderScale(event.clientX, event.clientY);
-            if (hit) {
-                const nombrePieza = hit.nodeName; // Nombre que traes de Inventor
-                resaltar(nombrePieza);
-            }
+            // Obtenemos todos los materiales/nodos que tienen nombre
+            model.materials.forEach((material) => {
+                if (material.name && material.name !== "Default") {
+                    const div = document.createElement("div");
+                    div.className = "component-item";
+                    div.innerText = "🔌 " + material.name;
+                    
+                    // Al hacer clic en la lista, resalta en el 3D
+                    div.onclick = () => resaltarPieza(material.name);
+                    treeContainer.appendChild(div);
+                }
+            });
         });
 
-        function resaltar(nombre) {
-            const modelo = viewer.model;
-            // Primero ponemos TODO transparente (fantasma)
-            modelo.materials.forEach(mat => mat.setAlphaMode("BLEND"));
-            modelo.materials.forEach(mat => mat.setBaseColorFactor([1, 1, 1, 0.1]));
-
-            // Buscamos si la pieza tocada tiene cables asociados en el diccionario
-            const cablesAsociados = relaciones[nombre] || [];
-            
-            // Resaltamos la pieza tocada y sus cables
-            const piezasAResaltar = [nombre, ...cablesAsociados];
-            
-            piezasAResaltar.forEach(p => {
-                const material = modelo.getMaterialByName(p); // Importante: Nombre en Inventor = Nombre Material
-                if(material) material.setBaseColorFactor([1, 1, 1, 1]);
+        function resaltarPieza(nombre) {
+            viewer.model.materials.forEach(mat => {
+                mat.setAlphaMode("BLEND");
+                if (mat.name === nombre) {
+                    mat.setBaseColorFactor([1, 1, 1, 1]); // Opaco
+                } else {
+                    mat.setBaseColorFactor([1, 1, 1, 0.1]); // Transparente
+                }
             });
         }
 
-        function resetear() {
-            viewer.model.materials.forEach(mat => mat.setBaseColorFactor([1, 1, 1, 1]));
+        function resetView() {
+            viewer.model.materials.forEach(mat => {
+                mat.setBaseColorFactor([1, 1, 1, 1]);
+            });
         }
     </script>
 </body>
-
 </html>
-
-
