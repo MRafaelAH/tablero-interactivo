@@ -30,8 +30,19 @@
         <button onclick="resetear()">Ver Todo</button>
     </div>
 
-    <model-viewer id="tablero" src="Tablero.glb" camera-controls touch-action="pan-y" shadow-intensity="1" ar>
-    </model-viewer>
+    <model-viewer 
+    id="tablero" 
+    src="Tablero.glb" 
+    ar 
+    camera-controls 
+    touch-action="pan-y"
+
+    skybox-image="https://modelviewer.dev/shared-assets/environments/neutral.hdr"
+    shadow-intensity="1.5"
+    shadow-softness="0.5"
+    environment-image="https://modelviewer.dev/shared-assets/environments/neutral.hdr"
+    exposure="1.2">
+</model-viewer>
 
     <script>
         const viewer = document.querySelector("#tablero");
@@ -76,4 +87,5 @@
 </body>
 
 </html>
+
 
